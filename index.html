@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Private Drive</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#0f172a;
+      --panel2:#111c33;
+      --panel3:rgba(255,255,255,0.05);
+      --border:rgba(255,255,255,0.10);
+      --border2:rgba(255,255,255,0.14);
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --accent:#60a5fa;
+      --danger:#fb7185;
+      --ok:#34d399;
+      --radius:14px;
+      --shadow:0 18px 60px rgba(0,0,0,0.55);
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:var(--font);
+      color:var(--text);
+      background:
+        radial-gradient(1100px 700px at 12% 10%, rgba(96,165,250,.18), transparent 60%),
+        radial-gradient(900px 600px at 88% 20%, rgba(52,211,153,.14), transparent 60%),
+        linear-gradient(180deg, #070b16, var(--bg));
+      padding:20px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .window{
+      width:min(1280px, 100%);
+      height:min(760px, 92vh);
+      background:rgba(15,23,42,0.78);
+      border:1px solid var(--border);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(14px);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+
+    /* Title bar */
+    .titlebar{
+      height:44px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 10px 0 12px;
+      background:rgba(2,6,23,0.55);
+      border-bottom:1px solid var(--border);
+    }
+    .title-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 260px;
+    }
+    .appicon{
+      width:26px;height:26px;border-radius:8px;
+      display:grid;place-items:center;
+      background:rgba(96,165,250,0.18);
+      border:1px solid rgba(96,165,250,0.25);
+      font-size:15px;
+    }
+    .apptitle{
+      display:flex;
+      flex-direction:column;
+      line-height:1.05;
+    }
+    .apptitle b{ font-size:.98rem; letter-spacing:.2px; }
+    .apptitle span{ font-size:.78rem; color:var(--muted); }
+
+    .winbtns{ display:flex; gap:8px; align-items:center; }
+    .dotbtn{
+      width:12px;height:12px;border-radius:50%;
+      background:rgba(255,255,255,0.18);
+      border:1px solid rgba(255,255,255,0.14);
+      opacity:.9;
+    }
+    .dotbtn.close{ background: rgba(251,113,133,.35); border-color: rgba(251,113,133,.30); }
+
+    /* Toolbar */
+    .toolbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:10px 12px;
+      background: rgba(17,28,51,0.55);
+      border-bottom:1px solid var(--border);
+    }
+    .toolgroup{ display:flex; gap:8px; align-items:center; }
+    .btn{
+      appearance:none;
+      border:1px solid var(--border2);
+      background:rgba(255,255,255,0.06);
+      color:var(--text);
+      padding:8px 10px;
+      border-radius:12px;
+      cursor:pointer;
+      transition: background .15s, transform .08s, border-color .15s;
+      font-size:.9rem;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{ background:rgba(255,255,255,0.10); border-color:rgba(255,255,255,0.20); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      border-color: rgba(96,165,250,.35);
+      background: rgba(96,165,250,.16);
+    }
+    .btn.danger{
+      border-color: rgba(251,113,133,.35);
+      background: rgba(251,113,133,.12);
+    }
+    .btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+    .pill{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid var(--border2);
+      background:rgba(255,255,255,0.06);
+      color:var(--muted);
+      font-size:.86rem;
+      white-space:nowrap;
+    }
+    .statusDot{
+      width:10px;height:10px;border-radius:50%;
+      background:var(--danger);
+      box-shadow: 0 0 0 6px rgba(251,113,133,.12);
+    }
+
+    /* Address + search */
+    .addrrow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:10px 12px;
+      background: rgba(17,28,51,0.40);
+      border-bottom:1px solid var(--border);
+    }
+    .addr{
+      flex:1;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      padding:8px 10px;
+      border-radius: 12px;
+      border:1px solid var(--border2);
+      background:rgba(255,255,255,0.05);
+      overflow:auto;
+      scrollbar-width: thin;
+    }
+    .crumb{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      color: var(--muted);
+      font-size:.92rem;
+      white-space:nowrap;
+    }
+    .crumb button{
+      border:0;
+      background:transparent;
+      color:var(--text);
+      cursor:pointer;
+      padding:4px 6px;
+      border-radius:10px;
+      font-size:.92rem;
+    }
+    .crumb button:hover{ background: rgba(255,255,255,0.08); }
+    .sep{ color: rgba(156,163,175,.7); }
+
+    .search{
+      width: min(340px, 40vw);
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius: 12px;
+      border:1px solid var(--border2);
+      background:rgba(255,255,255,0.05);
+    }
+    .search input{
+      width:100%;
+      border:0;
+      outline:none;
+      background:transparent;
+      color:var(--text);
+      font-size:.92rem;
+    }
+    .search .hint{ color: var(--muted); font-size:.9rem; }
+
+    /* Body split: tree | list | details */
+    .body{
+      flex:1;
+      display:flex;
+      min-height:0;
+    }
+
+    .treepane{
+      width: 280px;
+      background: rgba(2,6,23,0.35);
+      border-right:1px solid var(--border);
+      padding:10px;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .panehdr{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      font-size:.84rem;
+      letter-spacing:.08em;
+      text-transform: uppercase;
+    }
+
+    .tree{
+      overflow:auto;
+      padding-right:6px;
+    }
+
+    .node{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 8px;
+      border-radius: 12px;
+      cursor:pointer;
+      user-select:none;
+      border:1px solid transparent;
+    }
+    .node:hover{
+      background:rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.10);
+    }
+    .node.active{
+      background: rgba(96,165,250,.14);
+      border-color: rgba(96,165,250,.25);
+    }
+    .twisty{
+      width:18px;
+      display:grid;
+      place-items:center;
+      color: rgba(229,231,235,.9);
+      font-size: 12px;
+      opacity:.9;
+    }
+    .icon{
+      width:28px;height:28px;
+      display:grid;place-items:center;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      font-size: 14px;
+    }
+    .label{
+      display:flex;
+      flex-direction:column;
+      line-height:1.15;
+      min-width:0;
+    }
+    .label b{
+      font-size:.93rem;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .label span{
+      font-size:.78rem;
+      color:var(--muted);
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+
+    .children{
+      margin-left: 26px;
+      display:none;
+      padding-left: 10px;
+      border-left:1px dashed rgba(255,255,255,0.12);
+    }
+    .children.show{ display:block; }
+
+    .mainpane{
+      flex:1;
+      min-width:0;
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-height:0;
+    }
+
+    .list{
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.04);
+      overflow:hidden;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      flex:1;
+    }
+    .listhead{
+      display:grid;
+      grid-template-columns: 1.4fr .7fr .9fr;
+      padding:10px 12px;
+      background: rgba(255,255,255,0.04);
+      border-bottom:1px solid var(--border);
+      color: var(--muted);
+      font-size:.82rem;
+    }
+    .rows{
+      overflow:auto;
+      flex:1;
+    }
+    .row{
+      display:grid;
+      grid-template-columns: 1.4fr .7fr .9fr;
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      align-items:center;
+      cursor:pointer;
+      user-select:none;
+      transition: background .12s;
+    }
+    .row:hover{ background: rgba(255,255,255,0.06); }
+    .row.selected{
+      background: rgba(96,165,250,.16);
+    }
+
+    .cellname{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .fileicon{
+      width:30px;height:30px;
+      border-radius: 10px;
+      display:grid;
+      place-items:center;
+      background: rgba(96,165,250,.14);
+      border:1px solid rgba(96,165,250,.20);
+      font-size: 14px;
+      flex:0 0 auto;
+    }
+    .nametext{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .nametext b{
+      font-size:.95rem;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .nametext span{
+      font-size:.8rem;
+      color:var(--muted);
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .type, .modified{
+      color: var(--muted);
+      font-size:.9rem;
+    }
+
+    /* Details pane */
+    .detailspane{
+      width: 340px;
+      background: rgba(2,6,23,0.35);
+      border-left:1px solid var(--border);
+      padding:12px;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .preview{
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      border-radius: 16px;
+      padding:12px;
+      min-height: 160px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .bigicon{
+      font-size: 52px;
+      opacity:.95;
+    }
+    .preview small{
+      position:absolute;
+      bottom:10px;
+      left:12px;
+      right:12px;
+      color: rgba(156,163,175,.9);
+      font-size:.82rem;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .props{
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      border-radius: 16px;
+      padding:12px;
+      overflow:auto;
+      flex:1;
+    }
+    .props h3{
+      margin:0 0 10px 0;
+      font-size: .95rem;
+      color: rgba(229,231,235,.92);
+    }
+    .kv{
+      display:grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap:8px 10px;
+      font-size:.88rem;
+    }
+    .k{ color: var(--muted); }
+    .v{
+      color: rgba(229,231,235,.92);
+      font-family: var(--mono);
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .openbtn{
+      width:100%;
+      justify-content:center;
+    }
+
+    /* Locked blur */
+    .locked .treepane, .locked .mainpane, .locked .detailspane{
+      filter: blur(10px);
+      pointer-events:none;
+      opacity:.55;
+    }
+
+    /* Login overlay */
+    .overlay{
+      position:fixed; inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+      background: rgba(0,0,0,.58);
+    }
+    .overlay.show{ display:flex; }
+    .modal{
+      width:min(540px, 100%);
+      background: rgba(2,6,23,.90);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 20px;
+      box-shadow: 0 24px 90px rgba(0,0,0,.70);
+      padding: 18px;
+      backdrop-filter: blur(16px);
+    }
+    .modal h2{ margin:6px 0 2px 0; font-size:1.25rem; }
+    .modal p{ margin:0 0 14px 0; color: var(--muted); line-height:1.35; }
+    .inp{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      outline:none;
+      font-size: .95rem;
+    }
+    .inp:focus{ border-color: rgba(96,165,250,.55); }
+    .msg{ min-height: 20px; font-size:.9rem; color: var(--muted); margin-top: 8px; }
+    .msg.err{ color: var(--danger); }
+    .modal-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top: 12px;
+    }
+    .kbd{
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 8px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: rgba(229,231,235,0.9);
+      font-size:.82rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="window locked" id="win">
+    <!-- Title bar -->
+    <div class="titlebar">
+      <div class="title-left">
+        <div class="appicon">🗂️</div>
+        <div class="apptitle">
+          <b>Private Drive</b>
+          <span id="subtitle">Locked</span>
+        </div>
+      </div>
+      <div class="winbtns" aria-hidden="true">
+        <div class="dotbtn"></div>
+        <div class="dotbtn"></div>
+        <div class="dotbtn close"></div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolgroup">
+        <button class="btn" id="backBtn" disabled>⬅️ Back</button>
+        <button class="btn" id="upBtn" disabled>⬆️ Up</button>
+        <button class="btn" id="homeBtn">🏠 Home</button>
+        <button class="btn" id="refreshBtn">🔄 Refresh</button>
+      </div>
+
+      <div style="flex:1"></div>
+
+      <div class="pill">
+        <span class="statusDot" id="statusDot"></span>
+        <span id="statusText">Locked</span>
+      </div>
+
+      <button class="btn primary" id="loginBtn">🔐 Login</button>
+      <button class="btn danger" id="logoutBtn" style="display:none;">🚪 Logout</button>
+    </div>
+
+    <!-- Address + search -->
+    <div class="addrrow">
+      <div class="addr" id="addr"></div>
+
+      <div class="search" title="Search (filters list)">
+        🔎 <input id="searchBox" placeholder="Search this folder" />
+        <span class="hint" id="searchHint"></span>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="body">
+      <!-- Tree -->
+      <div class="treepane">
+        <div class="panehdr">
+          <span>This PC</span>
+          <button class="btn" id="collapseAllBtn" title="Collapse all">➖</button>
+        </div>
+
+        <div class="tree" id="tree"></div>
+      </div>
+
+      <!-- List -->
+      <div class="mainpane">
+        <div class="list">
+          <div class="listhead">
+            <div>Name</div>
+            <div>Type</div>
+            <div>Date modified</div>
+          </div>
+          <div class="rows" id="rows"></div>
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div class="detailspane">
+        <div class="panehdr">
+          <span>Details</span>
+          <span style="color:var(--muted); font-size:.85rem;">Preview + Properties</span>
+        </div>
+
+        <div class="preview" id="preview">
+          <div class="bigicon" id="bigicon">🗂️</div>
+          <small id="previewLabel">Select an item</small>
+        </div>
+
+        <button class="btn primary openbtn" id="openBtn" disabled>Open</button>
+
+        <div class="props">
+          <h3>Properties</h3>
+          <div class="kv" id="kv">
+            <div class="k">Name</div><div class="v">—</div>
+            <div class="k">Type</div><div class="v">—</div>
+            <div class="k">Path</div><div class="v">—</div>
+            <div class="k">Modified</div><div class="v">—</div>
+            <div class="k">Notes</div><div class="v">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login overlay -->
+  <div class="overlay" id="overlay">
+    <div class="modal" role="dialog" aria-modal="true">
+      <h2>🔐 Sign in to Private Drive</h2>
+      <p>
+        This is a <b>static</b> login gate (no server). For real protection, use server auth.
+        Press <span class="kbd">Enter</span> to unlock.
+      </p>
+
+      <input class="inp" id="user" placeholder="Username" autocomplete="username" />
+      <div style="height:10px"></div>
+      <input class="inp" id="pass" placeholder="Password" type="password" autocomplete="current-password" />
+
+      <div class="msg" id="msg"></div>
+
+      <div class="modal-actions">
+        <button class="btn" id="cancelBtn">Cancel</button>
+        <button class="btn primary" id="submitBtn">Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== AUTH CONFIG (salted hash only) ======
+    const EXPECTED_USER = "y8tireu";
+    const SALT = "p9$V3!n2";
+    // SHA256("y8tireu:051285:p9$V3!n2")
+    const EXPECTED_HASH_HEX = "1007e61100fc2fae55839e2aba29000155e956343aeb1e4f67a792aa08cbb350";
+
+    // ====== VIRTUAL FILE MODEL (static UI) ======
+    // NOTE: static HTML cannot read actual folders/files. This is a “hub” UI.
+    // You can add more entries here if you want a richer Explorer list.
+    const FS = {
+      "": [
+        { name:"Documents", path:"documents/", type:"File folder", icon:"📄", modified: "—", notes:"PDFs, notes, docs" },
+        { name:"Music", path:"music/", type:"File folder", icon:"🎵", modified: "—", notes:"Audio library" },
+        { name:"Pictures", path:"pictures/", type:"File folder", icon:"🖼️", modified: "—", notes:"Photos & images" },
+        { name:"Videos", path:"videos/", type:"File folder", icon:"🎬", modified: "—", notes:"Clips & recordings" },
+      ],
+      "documents/": [
+        { name:"Open folder", path:"documents/", type:"Redirect", icon:"📂", modified: "—", notes:"Opens server directory view" },
+      ],
+      "music/": [
+        { name:"Open folder", path:"music/", type:"Redirect", icon:"📂", modified: "—", notes:"Opens server directory view" },
+      ],
+      "pictures/": [
+        { name:"Open folder", path:"pictures/", type:"Redirect", icon:"📂", modified: "—", notes:"Opens server directory view" },
+      ],
+      "videos/": [
+        { name:"Open folder", path:"videos/", type:"Redirect", icon:"📂", modified: "—", notes:"Opens server directory view" },
+      ],
+    };
+
+    const TREE = [
+      {
+        id:"thispc", name:"This PC", icon:"🖥️", hint:"Private Drive",
+        children:[
+          { id:"home", name:"Private Drive", icon:"🗂️", path:"", hint:"Home" },
+          { id:"docs", name:"Documents", icon:"📄", path:"documents/", hint:"PDFs, notes" },
+          { id:"music", name:"Music", icon:"🎵", path:"music/", hint:"Audio" },
+          { id:"pics", name:"Pictures", icon:"🖼️", path:"pictures/", hint:"Images" },
+          { id:"vids", name:"Videos", icon:"🎬", path:"videos/", hint:"Video" },
+        ]
+      }
+    ];
+
+    // ====== DOM ======
+    const win = document.getElementById("win");
+    const overlay = document.getElementById("overlay");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const submitBtn = document.getElementById("submitBtn");
+    const msg = document.getElementById("msg");
+    const userEl = document.getElementById("user");
+    const passEl = document.getElementById("pass");
+
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+    const subtitle = document.getElementById("subtitle");
+
+    const backBtn = document.getElementById("backBtn");
+    const upBtn = document.getElementById("upBtn");
+    const homeBtn = document.getElementById("homeBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
+
+    const addrEl = document.getElementById("addr");
+    const searchBox = document.getElementById("searchBox");
+    const searchHint = document.getElementById("searchHint");
+
+    const treeEl = document.getElementById("tree");
+    const collapseAllBtn = document.getElementById("collapseAllBtn");
+
+    const rowsEl = document.getElementById("rows");
+
+    const bigicon = document.getElementById("bigicon");
+    const previewLabel = document.getElementById("previewLabel");
+    const kv = document.getElementById("kv");
+    const openBtn = document.getElementById("openBtn");
+
+    // ====== STATE ======
+    let currentPath = "";
+    let historyStack = [];
+    let selected = null; // currently selected entry (object)
+    let expanded = new Set(["thispc"]); // expanded nodes in tree
+
+    // ====== HELPERS ======
+    function nowDate(){
+      return new Date().toLocaleDateString(undefined, { year:"numeric", month:"short", day:"2-digit" });
+    }
+
+    function setLocked(isLocked){
+      if(isLocked){
+        win.classList.add("locked");
+        statusDot.style.background = "var(--danger)";
+        statusDot.style.boxShadow = "0 0 0 6px rgba(251,113,133,.12)";
+        statusText.textContent = "Locked";
+        subtitle.textContent = "Locked";
+        logoutBtn.style.display = "none";
+        loginBtn.style.display = "inline-flex";
+      } else {
+        win.classList.remove("locked");
+        statusDot.style.background = "var(--ok)";
+        statusDot.style.boxShadow = "0 0 0 6px rgba(52,211,153,.12)";
+        statusText.textContent = "Unlocked";
+        subtitle.textContent = "Unlocked";
+        logoutBtn.style.display = "inline-flex";
+        loginBtn.style.display = "none";
+      }
+    }
+
+    function openModal(){
+      msg.textContent = "";
+      msg.className = "msg";
+      overlay.classList.add("show");
+      setTimeout(()=>userEl.focus(), 50);
+    }
+    function closeModal(){
+      overlay.classList.remove("show");
+      passEl.value = "";
+    }
+
+    function normalizePath(p){
+      // ensure "" or ends with /
+      if(!p) return "";
+      return p.endsWith("/") ? p : (p + "/");
+    }
+
+    function navigateTo(path){
+      path = normalizePath(path);
+      if(path === currentPath) return;
+      historyStack.push(currentPath);
+      currentPath = path;
+      searchBox.value = "";
+      selected = null;
+      renderAll();
+    }
+
+    function goBack(){
+      if(historyStack.length === 0) return;
+      currentPath = historyStack.pop();
+      searchBox.value = "";
+      selected = null;
+      renderAll();
+    }
+
+    function goUp(){
+      if(!currentPath) return;
+      historyStack.push(currentPath);
+      currentPath = "";
+      searchBox.value = "";
+      selected = null;
+      renderAll();
+    }
+
+    function setSelection(entry){
+      selected = entry;
+      openBtn.disabled = !selected;
+      bigicon.textContent = selected ? selected.icon : "🗂️";
+      previewLabel.textContent = selected ? `${selected.name}` : "Select an item";
+
+      const props = selected ? [
+        ["Name", selected.name],
+        ["Type", selected.type],
+        ["Path", selected.path],
+        ["Modified", selected.modified && selected.modified !== "—" ? selected.modified : nowDate()],
+        ["Notes", selected.notes || "—"]
+      ] : [
+        ["Name","—"],["Type","—"],["Path","—"],["Modified","—"],["Notes","—"]
+      ];
+
+      kv.innerHTML = props.map(([k,v]) => `
+        <div class="k">${k}</div><div class="v" title="${String(v).replaceAll('"','&quot;')}">${v}</div>
+      `).join("");
+    }
+
+    function openSelected(){
+      if(!selected) return;
+      // If you want “open folder” to always redirect, this does it.
+      window.location.href = selected.path;
+    }
+
+    // ====== BREADCRUMBS ======
+    function renderBreadcrumbs(){
+      // "This PC" > "Private Drive" > folder
+      const parts = [];
+      parts.push({ label:"This PC", path:null }); // not navigable
+      parts.push({ label:"Private Drive", path:"" });
+
+      if(currentPath){
+        const clean = currentPath.replace(/\/$/, "");
+        parts.push({ label: clean.charAt(0).toUpperCase() + clean.slice(1), path: currentPath });
+      }
+
+      addrEl.innerHTML = parts.map((p, i) => {
+        const sep = i === 0 ? "" : `<span class="sep">›</span>`;
+        if(p.path === null){
+          return `${sep}<span class="crumb"><span>${p.label}</span></span>`;
+        }
+        return `${sep}<span class="crumb"><button data-path="${p.path}">${p.label}</button></span>`;
+      }).join("");
+
+      addrEl.querySelectorAll("button[data-path]").forEach(btn=>{
+        btn.addEventListener("click", ()=> navigateTo(btn.dataset.path));
+      });
+    }
+
+    // ====== LIST RENDERING + SEARCH FILTER ======
+    function getEntries(path){
+      path = normalizePath(path);
+      return FS[path] ? [...FS[path]] : [];
+    }
+
+    function filterEntries(entries, query){
+      const q = (query || "").trim().toLowerCase();
+      if(!q) return entries;
+      return entries.filter(e =>
+        (e.name || "").toLowerCase().includes(q) ||
+        (e.type || "").toLowerCase().includes(q) ||
+        (e.notes || "").toLowerCase().includes(q)
+      );
+    }
+
+    function renderRows(){
+      rowsEl.innerHTML = "";
+      const all = getEntries(currentPath);
+      const filtered = filterEntries(all, searchBox.value);
+
+      searchHint.textContent = filtered.length ? "" : (searchBox.value ? "No matches" : "");
+
+      filtered.forEach((e)=>{
+        const row = document.createElement("div");
+        row.className = "row" + (selected && selected.path === e.path && selected.name === e.name ? " selected" : "");
+        row.tabIndex = 0;
+
+        const date = e.modified && e.modified !== "—" ? e.modified : nowDate();
+
+        row.innerHTML = `
+          <div class="cellname">
+            <div class="fileicon">${e.icon}</div>
+            <div class="nametext">
+              <b title="${e.name}">${e.name}</b>
+              <span>${e.path}</span>
+            </div>
+          </div>
+          <div class="type">${e.type}</div>
+          <div class="modified">${date}</div>
+        `;
+
+        row.addEventListener("click", ()=>{
+          // single click selects
+          setSelection(e);
+          // rerender to highlight selection
+          renderRows();
+        });
+
+        // double click opens
+        let clickTimer = null;
+        row.addEventListener("dblclick", ()=>{
+          setSelection(e);
+          openSelected();
+        });
+
+        row.addEventListener("keydown", (ev)=>{
+          if(ev.key === "Enter"){
+            setSelection(e);
+            openSelected();
+          }
+        });
+
+        rowsEl.appendChild(row);
+      });
+
+      // default selection if none and entries exist
+      if(!selected && filtered.length){
+        setSelection(filtered[0]);
+        // keep highlight
+        renderRows();
+      } else if(!filtered.length){
+        setSelection(null);
+      }
+    }
+
+    // ====== TREE RENDERING ======
+    function renderTree(){
+      treeEl.innerHTML = "";
+
+      function renderNode(node, depth){
+        const hasKids = Array.isArray(node.children) && node.children.length > 0;
+        const isExpanded = expanded.has(node.id);
+
+        const wrap = document.createElement("div");
+        wrap.style.marginLeft = (depth * 10) + "px";
+
+        const line = document.createElement("div");
+        line.className = "node" + (node.path !== undefined && normalizePath(node.path) === currentPath ? " active" : "");
+        line.dataset.id = node.id;
+
+        const twisty = document.createElement("div");
+        twisty.className = "twisty";
+        twisty.textContent = hasKids ? (isExpanded ? "▾" : "▸") : "";
+        twisty.title = hasKids ? (isExpanded ? "Collapse" : "Expand") : "";
+
+        const icon = document.createElement("div");
+        icon.className = "icon";
+        icon.textContent = node.icon || "📁";
+
+        const label = document.createElement("div");
+        label.className = "label";
+        label.innerHTML = `<b>${node.name}</b><span>${node.hint || ""}</span>`;
+
+        line.appendChild(twisty);
+        line.appendChild(icon);
+        line.appendChild(label);
+        wrap.appendChild(line);
+
+        if(hasKids){
+          const kids = document.createElement("div");
+          kids.className = "children" + (isExpanded ? " show" : "");
+          node.children.forEach(ch => kids.appendChild(renderNode(ch, depth+1)));
+          wrap.appendChild(kids);
+
+          twisty.addEventListener("click", (ev)=>{
+            ev.stopPropagation();
+            if(expanded.has(node.id)) expanded.delete(node.id);
+            else expanded.add(node.id);
+            renderTree();
+          });
+        }
+
+        line.addEventListener("click", ()=>{
+          if(node.path !== undefined){
+            navigateTo(node.path);
+          } else if(hasKids){
+            // clicking "This PC" toggles
+            if(expanded.has(node.id)) expanded.delete(node.id);
+            else expanded.add(node.id);
+            renderTree();
+          }
+        });
+
+        return wrap;
+      }
+
+      TREE.forEach(n => treeEl.appendChild(renderNode(n, 0)));
+    }
+
+    function collapseAll(){
+      expanded = new Set(["thispc"]);
+      renderTree();
+    }
+
+    // ====== TOOLBAR BUTTON STATES ======
+    function renderToolbarState(){
+      backBtn.disabled = historyStack.length === 0;
+      upBtn.disabled = currentPath === "";
+    }
+
+    function renderAll(){
+      renderBreadcrumbs();
+      renderToolbarState();
+      renderTree();
+      renderRows();
+    }
+
+    // ====== CRYPTO ======
+    async function sha256Hex(input){
+      const enc = new TextEncoder();
+      const data = enc.encode(input);
+      const digest = await crypto.subtle.digest("SHA-256", data);
+      const bytes = new Uint8Array(digest);
+      return Array.from(bytes).map(b => b.toString(16).padStart(2,"0")).join("");
+    }
+
+    async function attemptLogin(){
+      const u = userEl.value.trim();
+      const p = passEl.value;
+
+      if(!u || !p){
+        msg.textContent = "Enter both username and password.";
+        msg.className = "msg err";
+        return;
+      }
+      if(u !== EXPECTED_USER){
+        msg.textContent = "Invalid username or password.";
+        msg.className = "msg err";
+        return;
+      }
+
+      const candidate = `${u}:${p}:${SALT}`;
+      const h = await sha256Hex(candidate);
+
+      if(h === EXPECTED_HASH_HEX){
+        sessionStorage.setItem("auth_ok", "1");
+        setLocked(false);
+        closeModal();
+      } else {
+        msg.textContent = "Invalid username or password.";
+        msg.className = "msg err";
+      }
+    }
+
+    // ====== EVENTS ======
+    loginBtn.addEventListener("click", openModal);
+    cancelBtn.addEventListener("click", closeModal);
+    overlay.addEventListener("click", (e)=>{ if(e.target === overlay) closeModal(); });
+    submitBtn.addEventListener("click", attemptLogin);
+    passEl.addEventListener("keydown", (e)=>{ if(e.key === "Enter") attemptLogin(); });
+    userEl.addEventListener("keydown", (e)=>{ if(e.key === "Enter") passEl.focus(); });
+
+    logoutBtn.addEventListener("click", ()=>{
+      sessionStorage.removeItem("auth_ok");
+      setLocked(true);
+    });
+
+    backBtn.addEventListener("click", goBack);
+    upBtn.addEventListener("click", goUp);
+    homeBtn.addEventListener("click", ()=> navigateTo(""));
+    refreshBtn.addEventListener("click", renderAll);
+
+    collapseAllBtn.addEventListener("click", collapseAll);
+
+    searchBox.addEventListener("input", ()=>{
+      // keep selection but refilter view
+      selected = null;
+      renderRows();
+    });
+
+    openBtn.addEventListener("click", openSelected);
+
+    // ====== INIT ======
+    renderAll();
+    setLocked(sessionStorage.getItem("auth_ok") !== "1");
+  </script>
+</body>
+</html>
