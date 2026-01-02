@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NoxiustDrive</title>
+  <title>Private Drive</title>
   <style>
     :root{
       --bg:#0b1220;
@@ -23,28 +23,31 @@
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
     }
     *{ box-sizing:border-box; }
+
+    /* FULLSCREEN */
     body{
       margin:0;
-      min-height:100vh;
+      height:100vh;
+      width:100vw;
+      overflow:hidden;
       font-family:var(--font);
       color:var(--text);
       background:
         radial-gradient(1100px 700px at 12% 10%, rgba(96,165,250,.18), transparent 60%),
         radial-gradient(900px 600px at 88% 20%, rgba(52,211,153,.14), transparent 60%),
         linear-gradient(180deg, #070b16, var(--bg));
-      padding:20px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      padding:0;
+      display:block;
     }
 
+    /* FULLSCREEN WINDOW */
     .window{
-      width:min(1280px, 100%);
-      height:min(760px, 92vh);
+      width:100vw;
+      height:100vh;
       background:rgba(15,23,42,0.78);
-      border:1px solid var(--border);
-      border-radius:18px;
-      box-shadow:var(--shadow);
+      border:0;
+      border-radius:0;
+      box-shadow:none;
       backdrop-filter: blur(14px);
       overflow:hidden;
       display:flex;
@@ -53,7 +56,7 @@
 
     /* Title bar */
     .titlebar{
-      height:44px;
+      height:48px;
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -189,7 +192,7 @@
     .sep{ color: rgba(156,163,175,.7); }
 
     .search{
-      width: min(340px, 40vw);
+      width: min(380px, 45vw);
       display:flex;
       align-items:center;
       gap:8px;
@@ -216,7 +219,7 @@
     }
 
     .treepane{
-      width: 280px;
+      width: 300px;
       background: rgba(2,6,23,0.35);
       border-right:1px solid var(--border);
       padding:10px;
@@ -352,9 +355,7 @@
       transition: background .12s;
     }
     .row:hover{ background: rgba(255,255,255,0.06); }
-    .row.selected{
-      background: rgba(96,165,250,.16);
-    }
+    .row.selected{ background: rgba(96,165,250,.16); }
 
     .cellname{
       display:flex;
@@ -398,7 +399,7 @@
 
     /* Details pane */
     .detailspane{
-      width: 340px;
+      width: 360px;
       background: rgba(2,6,23,0.35);
       border-left:1px solid var(--border);
       padding:12px;
@@ -420,10 +421,7 @@
       position:relative;
       overflow:hidden;
     }
-    .bigicon{
-      font-size: 52px;
-      opacity:.95;
-    }
+    .bigicon{ font-size: 52px; opacity:.95; }
     .preview small{
       position:absolute;
       bottom:10px;
@@ -462,11 +460,7 @@
       text-overflow:ellipsis;
       white-space:nowrap;
     }
-
-    .openbtn{
-      width:100%;
-      justify-content:center;
-    }
+    .openbtn{ width:100%; justify-content:center; }
 
     /* Locked blur */
     .locked .treepane, .locked .mainpane, .locked .detailspane{
@@ -534,7 +528,7 @@
       <div class="title-left">
         <div class="appicon">🗂️</div>
         <div class="apptitle">
-          <b>NoxiustDrive</b>
+          <b>Private Drive</b>
           <span id="subtitle">Locked</span>
         </div>
       </div>
@@ -630,7 +624,7 @@
   <!-- Login overlay -->
   <div class="overlay" id="overlay">
     <div class="modal" role="dialog" aria-modal="true">
-      <h2>🔐 Sign in to NoxiustDrive</h2>
+      <h2>🔐 Sign in to Private Drive</h2>
       <p>
         This is a <b>static</b> login gate (no server). For real protection, use server auth.
         Press <span class="kbd">Enter</span> to unlock.
@@ -682,9 +676,9 @@
 
     const TREE = [
       {
-        id:"thispc", name:"This PC", icon:"🖥️", hint:"NoxiustDrive",
+        id:"thispc", name:"This PC", icon:"🖥️", hint:"Private Drive",
         children:[
-          { id:"home", name:"NoxiustDrive", icon:"🗂️", path:"", hint:"Home" },
+          { id:"home", name:"Private Drive", icon:"🗂️", path:"", hint:"Home" },
           { id:"docs", name:"Documents", icon:"📄", path:"documents/", hint:"PDFs, notes" },
           { id:"music", name:"Music", icon:"🎵", path:"music/", hint:"Audio" },
           { id:"pics", name:"Pictures", icon:"🖼️", path:"pictures/", hint:"Images" },
@@ -730,8 +724,8 @@
     // ====== STATE ======
     let currentPath = "";
     let historyStack = [];
-    let selected = null; // currently selected entry (object)
-    let expanded = new Set(["thispc"]); // expanded nodes in tree
+    let selected = null;
+    let expanded = new Set(["thispc"]);
 
     // ====== HELPERS ======
     function nowDate(){
@@ -770,7 +764,6 @@
     }
 
     function normalizePath(p){
-      // ensure "" or ends with /
       if(!p) return "";
       return p.endsWith("/") ? p : (p + "/");
     }
@@ -825,16 +818,14 @@
 
     function openSelected(){
       if(!selected) return;
-      // If you want “open folder” to always redirect, this does it.
       window.location.href = selected.path;
     }
 
     // ====== BREADCRUMBS ======
     function renderBreadcrumbs(){
-      // "This PC" > "NoxiustDrive" > folder
       const parts = [];
-      parts.push({ label:"This PC", path:null }); // not navigable
-      parts.push({ label:"NoxiustDrive", path:"" });
+      parts.push({ label:"This PC", path:null });
+      parts.push({ label:"Private Drive", path:"" });
 
       if(currentPath){
         const clean = currentPath.replace(/\/$/, "");
@@ -897,14 +888,10 @@
         `;
 
         row.addEventListener("click", ()=>{
-          // single click selects
           setSelection(e);
-          // rerender to highlight selection
           renderRows();
         });
 
-        // double click opens
-        let clickTimer = null;
         row.addEventListener("dblclick", ()=>{
           setSelection(e);
           openSelected();
@@ -920,10 +907,8 @@
         rowsEl.appendChild(row);
       });
 
-      // default selection if none and entries exist
       if(!selected && filtered.length){
         setSelection(filtered[0]);
-        // keep highlight
         renderRows();
       } else if(!filtered.length){
         setSelection(null);
@@ -981,7 +966,6 @@
           if(node.path !== undefined){
             navigateTo(node.path);
           } else if(hasKids){
-            // clicking "This PC" toggles
             if(expanded.has(node.id)) expanded.delete(node.id);
             else expanded.add(node.id);
             renderTree();
@@ -999,7 +983,7 @@
       renderTree();
     }
 
-    // ====== TOOLBAR BUTTON STATES ======
+    // ====== TOOLBAR STATES ======
     function renderToolbarState(){
       backBtn.disabled = historyStack.length === 0;
       upBtn.disabled = currentPath === "";
@@ -1070,7 +1054,6 @@
     collapseAllBtn.addEventListener("click", collapseAll);
 
     searchBox.addEventListener("input", ()=>{
-      // keep selection but refilter view
       selected = null;
       renderRows();
     });
