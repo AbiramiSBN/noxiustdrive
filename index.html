@@ -7,9 +7,9 @@
   <style>
     :root{
       /* tuned for dark wallpaper */
-      --glass: rgba(10,14,24,.72);
-      --glass2: rgba(14,20,34,.62);
-      --panel: rgba(10,14,24,.58);
+      --glass: rgba(10,14,24,.62);
+      --glass2: rgba(14,20,34,.56);
+      --panel: rgba(12,16,28,.48);
       --panel2: rgba(255,255,255,.055);
       --border: rgba(255,255,255,.14);
       --border2: rgba(255,255,255,.20);
@@ -31,7 +31,7 @@
       font-family:var(--font);
       color:var(--text);
 
-      /* FILE BROWSER WALLPAPER (dark) */
+      /* FILE BROWSER WALLPAPER */
       background:
         linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.65)),
         url("pictures/wallpapers/wallpaper2.jpeg");
@@ -40,21 +40,54 @@
       background-repeat:no-repeat;
     }
 
+    /* ===== FULLSCREEN APP ===== */
     .window{
+      position:relative;
       width:100vw;height:100vh;
       display:flex;flex-direction:column;
-      background: var(--glass);
-      backdrop-filter: blur(16px);
       overflow:hidden;
+    }
+
+    /* ===== MICA / FROSTED PANEL LAYER =====
+       - sits behind UI
+       - makes text readable on wallpaper
+    */
+    .mica{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      /* subtle highlight + vignette */
+      background:
+        radial-gradient(1200px 900px at 20% 15%, rgba(96,165,250,.10), transparent 55%),
+        radial-gradient(900px 700px at 80% 20%, rgba(52,211,153,.06), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.55));
+      backdrop-filter: blur(18px) saturate(140%);
+      -webkit-backdrop-filter: blur(18px) saturate(140%);
+      opacity: 1;
+    }
+
+    /* actual UI layer */
+    .ui{
+      position:relative;
+      z-index:1;
+      width:100%;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: var(--shadow);
     }
 
     .titlebar{
       height:46px;
       display:flex;align-items:center;justify-content:space-between;
       padding:0 10px 0 12px;
-      background: rgba(0,0,0,.40);
+      background: rgba(0,0,0,.34);
       border-bottom:1px solid var(--border);
       user-select:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
     .title-left{ display:flex; align-items:center; gap:10px; }
     .appicon{
@@ -79,9 +112,11 @@
     .cmdbar{
       display:flex;align-items:center;gap:10px;
       padding:10px 12px;
-      background: rgba(0,0,0,.26);
+      background: rgba(0,0,0,.22);
       border-bottom:1px solid var(--border);
       user-select:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
     .btn{
       appearance:none;
@@ -122,8 +157,10 @@
     .addrrow{
       display:flex; align-items:center; gap:10px;
       padding:10px 12px;
-      background: rgba(0,0,0,.18);
+      background: rgba(0,0,0,.14);
       border-bottom:1px solid var(--border);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
     .addr{
       flex:1;
@@ -159,7 +196,7 @@
 
     .left{
       width: 310px;
-      background: rgba(0,0,0,.22);
+      background: rgba(0,0,0,.18);
       border-right:1px solid var(--border);
       padding:10px;
       min-height:0;
@@ -212,7 +249,7 @@
       min-height:0;
       border:1px solid var(--border);
       border-radius: 14px;
-      background: rgba(0,0,0,.20);
+      background: rgba(0,0,0,.16);
       overflow:hidden;
       display:flex;
       flex-direction:column;
@@ -227,7 +264,14 @@
       font-size:.82rem;
       user-select:none;
     }
-    .rows{ overflow:auto; flex:1; }
+    .rows{
+      overflow:auto;
+      flex:1;
+      outline:none;
+    }
+    .rows:focus{
+      box-shadow: inset 0 0 0 2px rgba(96,165,250,.28);
+    }
     .row{
       display:grid;
       grid-template-columns: 1.55fr .75fr .85fr;
@@ -265,7 +309,7 @@
 
     .details{
       width: 360px;
-      background: rgba(0,0,0,.22);
+      background: rgba(0,0,0,.18);
       border-left:1px solid var(--border);
       padding:12px;
       min-height:0;
@@ -316,7 +360,7 @@
     .statusbar{
       height:34px;
       border-top:1px solid var(--border);
-      background: rgba(0,0,0,.28);
+      background: rgba(0,0,0,.22);
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -324,6 +368,8 @@
       color: var(--muted);
       font-size:.86rem;
       user-select:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
     /* Context menu */
@@ -384,6 +430,7 @@
       border-radius: 22px;
       box-shadow: var(--shadow);
       backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       padding: 18px;
     }
     .signinHead{ display:flex; align-items:center; gap:12px; margin-bottom: 14px; }
@@ -413,71 +460,75 @@
 </head>
 
 <body>
-  <div class="window" id="win">
-    <div class="titlebar">
-      <div class="title-left">
-        <div class="appicon">🗂️</div>
-        <div class="apptitle">
-          <b>NoxiustDrive</b>
-          <span id="subtitle">Unlocked</span>
+  <div class="window">
+    <div class="mica"></div>
+
+    <div class="ui" id="ui">
+      <div class="titlebar">
+        <div class="title-left">
+          <div class="appicon">🗂️</div>
+          <div class="apptitle">
+            <b>NoxiustDrive</b>
+            <span id="subtitle">Unlocked</span>
+          </div>
         </div>
-      </div>
-      <div class="winbtns" aria-hidden="true">
-        <div class="dotbtn"></div>
-        <div class="dotbtn"></div>
-        <div class="dotbtn close"></div>
-      </div>
-    </div>
-
-    <div class="cmdbar">
-      <button class="btn" id="openBtn" disabled>📂 Open</button>
-      <button class="btn" id="refreshBtn">🔄 Refresh</button>
-      <div style="flex:1"></div>
-      <div class="pill">
-        <span class="statusDot" id="statusDot"></span>
-        <span id="statusText">Locked</span>
-      </div>
-      <button class="btn primary" id="logoutBtn">🚪 Lock</button>
-    </div>
-
-    <div class="addrrow">
-      <div class="addr" id="addr">/</div>
-      <div class="search">🔎 <input id="searchBox" placeholder="Search (filters list)"/></div>
-    </div>
-
-    <div class="body">
-      <div class="left">
-        <div class="panehdr"><span>This PC</span><span>Folders</span></div>
-        <div class="tree" id="tree"></div>
-      </div>
-
-      <div class="main">
-        <div class="list">
-          <div class="listhead"><div>Name</div><div>Type</div><div>Date modified</div></div>
-          <div class="rows" id="rows"></div>
+        <div class="winbtns" aria-hidden="true">
+          <div class="dotbtn"></div>
+          <div class="dotbtn"></div>
+          <div class="dotbtn close"></div>
         </div>
       </div>
 
-      <div class="details">
-        <div class="panehdr"><span>Details</span><span>Preview + Properties</span></div>
-        <div class="preview">
-          <div class="bigicon" id="bigicon">🗂️</div>
-          <small id="previewLabel">Select an item</small>
+      <div class="cmdbar">
+        <button class="btn" id="openBtn" disabled>📂 Open</button>
+        <button class="btn" id="refreshBtn">🔄 Refresh</button>
+        <div style="flex:1"></div>
+        <div class="pill">
+          <span class="statusDot" id="statusDot"></span>
+          <span id="statusText">Locked</span>
         </div>
-        <div class="props">
-          <h3>Properties</h3>
-          <div class="kv" id="kv">
-            <div class="k">Name</div><div class="v">—</div>
-            <div class="k">Type</div><div class="v">—</div>
-            <div class="k">URL</div><div class="v">—</div>
+        <button class="btn primary" id="logoutBtn">🚪 Lock</button>
+      </div>
+
+      <div class="addrrow">
+        <div class="addr" id="addr">/</div>
+        <div class="search">🔎 <input id="searchBox" placeholder="Search (filters list)"/></div>
+      </div>
+
+      <div class="body">
+        <div class="left">
+          <div class="panehdr"><span>This PC</span><span>Folders</span></div>
+          <div class="tree" id="tree"></div>
+        </div>
+
+        <div class="main">
+          <div class="list">
+            <div class="listhead"><div>Name</div><div>Type</div><div>Date modified</div></div>
+            <div class="rows" id="rows" tabindex="0" aria-label="File list"></div>
+          </div>
+        </div>
+
+        <div class="details">
+          <div class="panehdr"><span>Details</span><span>Preview + Properties</span></div>
+          <div class="preview">
+            <div class="bigicon" id="bigicon">🗂️</div>
+            <small id="previewLabel">Select an item</small>
+          </div>
+          <div class="props">
+            <h3>Properties</h3>
+            <div class="kv" id="kv">
+              <div class="k">Name</div><div class="v">—</div>
+              <div class="k">Type</div><div class="v">—</div>
+              <div class="k">URL</div><div class="v">—</div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="statusbar">
-      <div id="sbLeft">0 items</div>
-      <div id="sbRight">Ready</div>
+      <div class="statusbar">
+        <div id="sbLeft">0 items</div>
+        <div id="sbRight">Ready</div>
+      </div>
     </div>
   </div>
 
@@ -517,6 +568,7 @@
     return Array.from(bytes).map(b => b.toString(16).padStart(2,"0")).join("");
   }
 
+  // Root folders only (no fake file listings)
   const ROOT_FOLDERS = [
     { name:"Documents", url:"documents/", icon:"📄" },
     { name:"Music",     url:"music/",     icon:"🎵" },
@@ -558,12 +610,16 @@
       subtitle.textContent = "Locked";
       statusDot.style.background = "var(--danger)";
       statusDot.style.boxShadow = "0 0 0 6px rgba(251,113,133,.12)";
+      // focus login
+      setTimeout(()=>userEl.focus(), 50);
     }else{
       lock.classList.remove("show");
       statusText.textContent = "Unlocked";
       subtitle.textContent = "Unlocked";
       statusDot.style.background = "var(--ok)";
       statusDot.style.boxShadow = "0 0 0 6px rgba(52,211,153,.12)";
+      // focus list
+      setTimeout(()=>rowsEl.focus(), 50);
     }
   }
 
@@ -626,11 +682,14 @@
         hideCtx();
         renderRows();
       });
+
+      /* ✅ DOUBLE CLICK TO OPEN */
       row.addEventListener("dblclick", ()=>{
         selectedIndex = idx;
         hideCtx();
         openSelected();
       });
+
       row.addEventListener("contextmenu", (ev)=>{
         ev.preventDefault();
         selectedIndex = idx;
@@ -643,13 +702,14 @@
 
     sbLeft.textContent = `${filtered.length} item${filtered.length===1?"":"s"}`;
     updateDetails();
+
     rowsEl.querySelectorAll(".row").forEach((r,i)=> r.classList.toggle("selected", i===selectedIndex));
   }
 
   function openSelected(){
     const it = selectedItem();
     if(!it) return;
-    window.location.href = it.url;
+    window.location.href = it.url; // real directory URL
   }
 
   function renderTree(){
@@ -664,6 +724,7 @@
     });
   }
 
+  // Context menu
   function showCtx(x,y){
     ctxMenu.style.display = "block";
     const pad=8;
@@ -678,7 +739,7 @@
     if(!ev.target.closest(".ctx")) hideCtx();
   });
   document.addEventListener("contextmenu", (ev)=>{
-    if(ev.target.closest(".window")){
+    if(ev.target.closest(".ui")){
       ev.preventDefault();
       if(!ev.target.closest(".row")) hideCtx();
     }
@@ -689,12 +750,30 @@
   openBtn.addEventListener("click", openSelected);
   document.getElementById("refreshBtn").addEventListener("click", ()=>{ hideCtx(); renderRows(); });
 
+  // Keyboard: Enter opens; arrows navigate
+  rowsEl.addEventListener("keydown", (ev)=>{
+    if(filtered.length === 0) return;
+    if(ev.key === "ArrowDown"){
+      ev.preventDefault();
+      selectedIndex = Math.min(filtered.length-1, selectedIndex + 1);
+      renderRows();
+    } else if(ev.key === "ArrowUp"){
+      ev.preventDefault();
+      selectedIndex = Math.max(0, selectedIndex - 1);
+      renderRows();
+    } else if(ev.key === "Enter"){
+      ev.preventDefault();
+      openSelected();
+    }
+  });
+
   searchBox.addEventListener("input", ()=>{
     selectedIndex = -1;
     hideCtx();
     renderRows();
   });
 
+  // Lock / Unlock
   async function attemptLogin(){
     const u = userEl.value.trim();
     const p = passEl.value;
