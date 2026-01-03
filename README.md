@@ -107,8 +107,6 @@ pictures/wallpapers/
 
 ---
 
----
-
 ## 🙌 Credits
 
 Built with pure **HTML, CSS, and JavaScript**.  
